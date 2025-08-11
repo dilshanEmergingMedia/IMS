@@ -1,0 +1,12 @@
+<?php
+
+namespace App\Filament\Resources\InventoryManageResource\Pages;
+
+use App\Filament\Resources\InventoryManageResource;
+use Filament\Actions;
+use Filament\Resources\Pages\CreateRecord;
+
+class CreateInventoryManage extends CreateRecord
+{
+    protected static string $resource = InventoryManageResource::class;
+}
