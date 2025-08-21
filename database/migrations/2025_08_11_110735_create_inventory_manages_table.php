@@ -14,8 +14,7 @@ return new class extends Migration
         Schema::create('inventory_manages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('store_id')->constrained()->onDelete('cascade');
-            $table->foreignId('screenLocation_id')->constrained()->onDelete('cascade');
-            $table->foreignId('spare_id')->constrained()->onDelete('cascade');
+            $table->foreignId('screenLocation_id')->constrained('screen_locations')->onDelete('cascade');
             $table->string('model')->nullable();
             $table->string('serial_number')->nullable();
             $table->integer('quantity')->default(1);

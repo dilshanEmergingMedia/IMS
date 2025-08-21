@@ -2,26 +2,24 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\InventoryManageResource\Pages;
-use App\Models\InventoryManage;
+use App\Models\Inventory;
+use App\Filament\Resources\InventoryResource\Pages;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use App\Models\Store;
+use Filament\Tables;
+use Filament\Tables\Table;
 use App\Models\screenLocation;
 use App\Models\Spare;
 use App\Models\SpareModel;
-use App\Models\Store;
-use Filament\Forms\Components\Repeater;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Components\Select;
+use Filament\Resources\Resource;
 
-class InventoryManageResource extends Resource
+class InventoryResource extends Resource
 {
-    protected static ?string $model = InventoryManage::class;
+    protected static ?string $model = Inventory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -29,55 +27,34 @@ class InventoryManageResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Spare Details')
-                    ->description('Select details for the spare part.')
+                Section::make('Inventory Details')
+                    ->description('Enter main inventory information.')
                     ->schema([
                         Select::make('store_id')
                             ->label('Store')
                             ->required()
                             ->options(
                                 Store::where('status', '1')
-                                    ->pluck('name', 'id')
+                                    ->pluck('name', 'id') // Adjust 'name' if needed
                                     ->toArray()
                             )
                             ->placeholder('Select a store')
                             ->searchable(),
-                        Select::make('screenLocation_id')
-                            ->label('Screen Location')
+                        Select::make('screen_id')
+                            ->label('Screen')
                             ->required()
                             ->options(
                                 screenLocation::where('status', '1')
-                                    ->pluck('name', 'id') // Adjust 'name' to the appropriate column
+                                    ->pluck('name', 'id') // Adjust 'name' if needed; adjust model if it's ScreenLocation
                                     ->toArray()
                             )
-                            ->placeholder('Select a screen location')
+                            ->placeholder('Select a screen')
                             ->searchable(),
                     ])
-                    ->columns(3), // Three-column layout
-                // Section::make('Spare Information')
-                //     ->schema([
-                //         TextInput::make('model')
-                //             ->label('Model')
-                //             ->maxLength(255)
-                //             ->placeholder('Enter model name'),
-                //         TextInput::make('serial_number')
-                //             ->label('Serial Number')
-                //             ->maxLength(255)
-                //             ->placeholder('Enter serial number'),
-                //         TextInput::make('quantity')
-                //             ->label('Quantity')
-                //             ->required()
-                //             ->numeric()
-                //             ->default(1)
-                //             ->minValue(1)
-                //             ->placeholder('Enter quantity')
-                //             ->rule('integer'),
-                //     ])
-                //     ->columns(3),
-
-                Repeater::make('inventoryManageDetails')
-                    ->relationship('inventoryManageDetails')
-                    ->label('Inventory Manage Details')
+                    ->columns(2),
+                Repeater::make('inventoryDetails')
+                    ->relationship('inventoryDetails') // Assumes hasMany relationship defined in Inventory model
+                    ->label('Inventory Details')
                     ->schema([
                         Select::make('spare_id')
                             ->label('Spare')
@@ -118,7 +95,7 @@ class InventoryManageResource extends Resource
                                 'repairing' => 'Repairing',
                             ])
                             ->placeholder('Select condition'),
-                        TextInput::make('quantity')
+                        TextInput::make('qty')
                             ->label('Quantity')
                             ->required()
                             ->numeric()
@@ -132,32 +109,6 @@ class InventoryManageResource extends Resource
                     ->itemLabel(fn(array $state): ?string => ($state['spare_id'] ?? 'New') . ' - ' . ($state['condition'] ?? 'New') . ' (Qty: ' . ($state['qty'] ?? 0) . ')')
                     ->columnSpanFull()
                     ->addActionLabel('Add Another Detail'),
-
-                Section::make('Additional Information')
-                    ->schema([
-                        Textarea::make('remark')
-                            ->label('Remarks')
-                            ->placeholder('Add any additional notes or remarks')
-                            ->columnSpanFull()
-                            ->rows(4),
-                        ToggleButtons::make('status')
-                            ->label('')
-                            ->required()
-                            ->options([
-                                'check_in' => 'Check In',
-                                'check_out' => 'Check Out',
-                            ])
-                            ->colors([
-                                'check_in' => 'success',
-                                'check_out' => 'danger',
-                            ])
-                            ->inline()
-                            ->default('check_in')
-                            ->formatStateUsing(fn($state) => $state === '1' ? 'check_in' : 'check_out')
-                            ->dehydrateStateUsing(fn($state) => $state === 'check_in' ? '1' : '0')
-                            ->hint('Select whether the spare is being checked in or out.')
-                            ->columns(1),
-                    ])->columns(2),
             ]);
     }
 
@@ -168,21 +119,8 @@ class InventoryManageResource extends Resource
                 Tables\Columns\TextColumn::make('store.name')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('screenLocation.name')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('inventoryManageDetails.spare.name')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('inventoryManageDetails.model')
+                Tables\Columns\TextColumn::make('screen.name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('serial_number')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('inventoryManageDetails.quantity')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->badge(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -215,9 +153,9 @@ class InventoryManageResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListInventoryManages::route('/'),
-            'create' => Pages\CreateInventoryManage::route('/create'),
-            'edit' => Pages\EditInventoryManage::route('/{record}/edit'),
+            'index' => Pages\ListInventories::route('/'),
+            'create' => Pages\CreateInventory::route('/create'),
+            'edit' => Pages\EditInventory::route('/{record}/edit'),
         ];
     }
 }
