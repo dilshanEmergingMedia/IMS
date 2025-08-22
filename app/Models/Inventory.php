@@ -29,7 +29,7 @@ class Inventory extends Model
      */
     public function screen(): BelongsTo
     {
-        return $this->belongsTo(ScreenLocation::class);
+        return $this->belongsTo(screenLocation::class);
     }
 
     /**

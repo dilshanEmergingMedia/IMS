@@ -3,7 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\InventoryManageResource\Pages;
-use App\Models\InventoryManage;
+use App\Models\inventoryManage;
 use App\Models\screenLocation;
 use App\Models\Spare;
 use App\Models\SpareModel;
@@ -21,7 +21,7 @@ use Filament\Forms\Components\Select;
 
 class InventoryManageResource extends Resource
 {
-    protected static ?string $model = InventoryManage::class;
+    protected static ?string $model = inventoryManage::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
