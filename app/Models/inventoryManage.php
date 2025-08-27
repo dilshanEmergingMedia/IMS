@@ -9,8 +9,11 @@ class inventoryManage extends Model
 {
     protected $fillable = [
         'store_id',
+        'screen',
         'screenLocation_id',
         'model',
+        'asset_id',
+        'asset_models_id',
         'serial_number',
         'quantity',
         'remark',

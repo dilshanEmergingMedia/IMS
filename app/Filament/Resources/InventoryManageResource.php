@@ -3,6 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\InventoryManageResource\Pages;
+use App\Models\Asset;
+use App\Models\AssetModel;
 use App\Models\inventoryManage;
 use App\Models\screenLocation;
 use App\Models\Spare;
@@ -18,6 +20,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 
 class InventoryManageResource extends Resource
 {
@@ -29,8 +32,50 @@ class InventoryManageResource extends Resource
     {
         return $form
             ->schema([
+                Section::make('Mode Selection')
+                    ->description('Choose the operation mode and inventory status.')
+                    ->schema([
+                        Toggle::make('screen')
+                            ->label(fn($get) => $get('screen') ? 'Screen Mode' : 'Event Mode')
+                            ->default(true)
+                            ->onColor('success')
+                            ->offColor('danger')
+                            ->helperText('Toggle between Screen and Event modes.')
+                            ->inline(false)
+                            ->extraAttributes(['class' => 'mt-4'])
+                            ->reactive()
+                            ->onIcon('heroicon-m-tv')
+                            ->offIcon('heroicon-m-calendar'),
+                        ToggleButtons::make('status')
+                            ->label('Inventory Status')
+                            ->required()
+                            ->options([
+                                'check_in' => 'Check In',
+                                'check_out' => 'Check Out',
+                            ])
+                            ->colors([
+                                'check_in' => 'success',
+                                'check_out' => 'danger',
+                            ])
+                            ->icons([
+                                'check_in' => 'heroicon-o-arrow-down-circle',
+                                'check_out' => 'heroicon-o-arrow-up-circle',
+                            ])
+                            ->grouped()
+                            ->default('check_in')
+                            ->formatStateUsing(fn($state) => $state === '1' ? 'check_in' : 'check_out')
+                            ->dehydrateStateUsing(fn($state) => $state === 'check_in' ? '1' : '0')
+                            ->hint('Select whether the spare is being checked in or out.')
+                            ->extraAttributes(['class' => 'mt-4'])
+                            ->disabled(fn($get) => is_null($get('screen'))),
+                    ])
+                    ->collapsible()
+                    ->icon('heroicon-o-cog')
+                    ->columns(['default' => 1, 'sm' => 2])
+                    ->extraAttributes(['class' => 'shadow-sm rounded-lg p-6']),
+
                 Section::make('Spare Details')
-                    ->description('Select details for the spare part.')
+                    ->description('Provide details for the spare part.')
                     ->schema([
                         Select::make('store_id')
                             ->label('Store')
@@ -41,43 +86,69 @@ class InventoryManageResource extends Resource
                                     ->toArray()
                             )
                             ->placeholder('Select a store')
-                            ->searchable(),
+                            ->searchable()
+                            ->prefixIcon('heroicon-o-building-storefront')
+                            ->columnSpan(1)
+                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
                         Select::make('screenLocation_id')
                             ->label('Screen Location')
-                            ->required()
+                            ->required(fn($get) => $get('screen'))
                             ->options(
-                                screenLocation::where('status', '1')
-                                    ->pluck('name', 'id') // Adjust 'name' to the appropriate column
+                                ScreenLocation::where('status', '1')
+                                    ->pluck('name', 'id')
                                     ->toArray()
                             )
-                            ->placeholder('Select a screen location')
-                            ->searchable(),
+                            ->placeholder('screen location')
+                            ->searchable()
+                            ->prefixIcon('heroicon-o-map')
+                            ->visible(fn($get) => $get('screen'))
+                            ->columnSpan(2)
+                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
+                        Select::make('asset_id')
+                            ->label('Asset')
+                            ->required(fn($get) => !$get('screen'))
+                            ->options(
+                                Asset::where('status', '1')
+                                    ->pluck('name', 'id')
+                                    ->toArray()
+                            )
+                            ->placeholder('Select an asset')
+                            ->searchable()
+                            ->prefixIcon('heroicon-o-cube')
+                            ->visible(fn($get) => !$get('screen'))
+                            ->reactive()
+                            ->columnSpan(1)
+                            ->afterStateUpdated(function (callable $set) {
+                                $set('asset_models_id', null);
+                            })
+                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
+                        Select::make('asset_models_id')
+                            ->label('Asset Model')
+                            ->required(fn($get) => !$get('screen'))
+                            ->options(function (callable $get) {
+                                $assetId = $get('asset_id');
+                                if (!$assetId) {
+                                    return [];
+                                }
+                                return AssetModel::where('asset_id', $assetId)
+                                    ->where('status', '1')
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->placeholder('Asset model')
+                            ->searchable()
+                            ->prefixIcon('heroicon-o-rectangle-stack')
+                            ->visible(fn($get) => !$get('screen'))
+                            ->reactive()
+                            ->columnSpan(1)
+                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
                     ])
-                    ->columns(3), // Three-column layout
-                // Section::make('Spare Information')
-                //     ->schema([
-                //         TextInput::make('model')
-                //             ->label('Model')
-                //             ->maxLength(255)
-                //             ->placeholder('Enter model name'),
-                //         TextInput::make('serial_number')
-                //             ->label('Serial Number')
-                //             ->maxLength(255)
-                //             ->placeholder('Enter serial number'),
-                //         TextInput::make('quantity')
-                //             ->label('Quantity')
-                //             ->required()
-                //             ->numeric()
-                //             ->default(1)
-                //             ->minValue(1)
-                //             ->placeholder('Enter quantity')
-                //             ->rule('integer'),
-                //     ])
-                //     ->columns(3),
+                    ->columns(['default' => 1, 'sm' => 2, 'lg' => 3])
+                    ->extraAttributes(['class' => 'bg-white shadow-sm rounded-lg p-6']),
 
                 Repeater::make('inventoryManageDetails')
                     ->relationship('inventoryManageDetails')
-                    ->label('Inventory Manage Details')
+                    ->label('Inventory Details')
                     ->schema([
                         Select::make('spare_id')
                             ->label('Spare')
@@ -89,10 +160,12 @@ class InventoryManageResource extends Resource
                             )
                             ->placeholder('Select a spare')
                             ->searchable()
+                            ->prefixIcon('heroicon-o-wrench-screwdriver')
                             ->reactive()
                             ->afterStateUpdated(function (callable $set, $state) {
                                 $set('model', null);
-                            }),
+                            })
+                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
                         Select::make('model')
                             ->label('Model')
                             ->required()
@@ -107,7 +180,9 @@ class InventoryManageResource extends Resource
                             })
                             ->placeholder('Select a model')
                             ->searchable()
-                            ->reactive(),
+                            ->prefixIcon('heroicon-o-identification')
+                            ->reactive()
+                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
                         Select::make('condition')
                             ->label('Condition')
                             ->required()
@@ -117,7 +192,9 @@ class InventoryManageResource extends Resource
                                 'need_to_repair' => 'Need to Repair',
                                 'repairing' => 'Repairing',
                             ])
-                            ->placeholder('Select condition'),
+                            ->placeholder('Select condition')
+                            ->prefixIcon('heroicon-o-shield-check')
+                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
                         TextInput::make('quantity')
                             ->label('Quantity')
                             ->required()
@@ -125,42 +202,35 @@ class InventoryManageResource extends Resource
                             ->default(0)
                             ->minValue(0)
                             ->placeholder('Enter quantity')
-                            ->integer(),
+                            ->integer()
+                            ->prefixIcon('heroicon-o-calculator')
+                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
                     ])
-                    ->columns(3)
+                    ->columns(['default' => 1, 'sm' => 2, 'lg' => 3])
                     ->collapsible()
-                    ->itemLabel(fn(array $state): ?string => ($state['spare_id'] ?? 'New') . ' - ' . ($state['condition'] ?? 'New') . ' (Qty: ' . ($state['qty'] ?? 0) . ')')
+                    ->itemLabel(fn(array $state): ?string => ($state['spare_id'] ?? 'New') . ' - ' . ($state['condition'] ?? 'New') . ' (Qty: ' . ($state['quantity'] ?? 0) . ')')
                     ->columnSpanFull()
-                    ->addActionLabel('Add Another Detail'),
+                    ->addActionLabel('Add Another Inventory Detail')
+                    ->extraAttributes(['class' => 'shadow-sm rounded-lg mt-6']),
 
                 Section::make('Additional Information')
+                    ->description('Add any additional details or remarks.')
                     ->schema([
                         Textarea::make('remark')
                             ->label('Remarks')
                             ->placeholder('Add any additional notes or remarks')
                             ->columnSpanFull()
-                            ->rows(4),
-                        ToggleButtons::make('status')
-                            ->label('')
-                            ->required()
-                            ->options([
-                                'check_in' => 'Check In',
-                                'check_out' => 'Check Out',
-                            ])
-                            ->colors([
-                                'check_in' => 'success',
-                                'check_out' => 'danger',
-                            ])
-                            ->inline()
-                            ->default('check_in')
-                            ->formatStateUsing(fn($state) => $state === '1' ? 'check_in' : 'check_out')
-                            ->dehydrateStateUsing(fn($state) => $state === 'check_in' ? '1' : '0')
-                            ->hint('Select whether the spare is being checked in or out.')
-                            ->columns(1),
-                    ])->columns(2),
-            ]);
+                            ->rows(4)
+                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg resize-y']),
+                    ])
+                    ->columns(['default' => 1, 'sm' => 2])
+                    ->collapsible()
+                    ->icon('heroicon-o-information-circle')
+                    ->extraAttributes(['class' => 'bg-white shadow-sm rounded-lg p-6 mt-6'])
+                    ->disabled(fn($get) => is_null($get('screen')) || is_null($get('status'))),
+            ])
+            ->extraAttributes(['class' => 'max-w-4xl mx-auto p-6 rounded-xl']);
     }
-
     public static function table(Table $table): Table
     {
         return $table

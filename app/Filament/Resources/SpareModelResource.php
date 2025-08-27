@@ -18,6 +18,8 @@ class SpareModelResource extends Resource
 {
     protected static ?string $model = SpareModel::class;
 
+    protected static ?string $navigationGroup = 'Screen';
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form

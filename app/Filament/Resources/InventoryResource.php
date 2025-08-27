@@ -21,6 +21,8 @@ class InventoryResource extends Resource
 {
     protected static ?string $model = Inventory::class;
 
+    protected static ?string $navigationGroup = 'Screen';
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
@@ -42,7 +44,6 @@ class InventoryResource extends Resource
                             ->searchable(),
                         Select::make('screen_id')
                             ->label('Screen')
-                            ->required()
                             ->options(
                                 screenLocation::where('status', '1')
                                     ->pluck('name', 'id') // Adjust 'name' if needed; adjust model if it's ScreenLocation

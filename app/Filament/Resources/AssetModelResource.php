@@ -2,22 +2,20 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\ScreenLocationResource\Pages;
-use App\Filament\Resources\ScreenLocationResource\RelationManagers;
-use App\Models\screenLocation;
+use App\Filament\Resources\AssetModelResource\Pages;
+use App\Models\Asset;
+use App\Models\AssetModel;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class ScreenLocationResource extends Resource
+class AssetModelResource extends Resource
 {
-    protected static ?string $model = screenLocation::class;
+    protected static ?string $model = AssetModel::class;
 
-    protected static ?string $navigationGroup = 'Screen';
+    protected static ?string $navigationGroup = 'Event';
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -25,7 +23,17 @@ class ScreenLocationResource extends Resource
     {
         return $form
             ->schema([
+
                 Forms\Components\Section::make()->schema([
+                    Forms\Components\Select::make('asset_id')
+                        ->label('Asset')
+                        ->required()
+                        ->options(
+                            Asset::where('status', '1')
+                                ->pluck('name', 'id')
+                                ->toArray()
+                        )
+                        ->placeholder('Select asset'),
                     Forms\Components\TextInput::make('name')
                         ->required()
                         ->columnSpan(1),
@@ -42,15 +50,15 @@ class ScreenLocationResource extends Resource
                             'strike',
                             'underline',
                         ])
-                        ->placeholder('Enter Screen Remark')
-                        ->helperText('Optional remark for the screen')
-                        ->columnSpan(1),
+                        ->placeholder('Enter asset Remark')
+                        ->helperText('Optional remark for the asset')
+                        ->columnSpanFull(),
                 ])->columns(2),
                 Forms\Components\Section::make('Status')
                     ->schema([
                         Forms\Components\Toggle::make('status')
                             ->default(true)
-                            ->helperText('Active or Inactive Screen Location'),
+                            ->helperText('Active or Inactive asset'),
                     ])->columns(1),
             ]);
     }
@@ -61,6 +69,9 @@ class ScreenLocationResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('asset_id')
+                    ->numeric()
+                    ->sortable(),
                 Tables\Columns\IconColumn::make('status')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
@@ -76,9 +87,7 @@ class ScreenLocationResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton(),
-                Tables\Actions\EditAction::make()->iconButton(),
-                Tables\Actions\DeleteAction::make()->iconButton(),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -97,9 +106,9 @@ class ScreenLocationResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListScreenLocations::route('/'),
-            'create' => Pages\CreateScreenLocation::route('/create'),
-            'edit' => Pages\EditScreenLocation::route('/{record}/edit'),
+            'index' => Pages\ListAssetModels::route('/'),
+            'create' => Pages\CreateAssetModel::route('/create'),
+            'edit' => Pages\EditAssetModel::route('/{record}/edit'),
         ];
     }
 }

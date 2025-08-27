@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\ScreenLocationResource\Pages;
-use App\Filament\Resources\ScreenLocationResource\RelationManagers;
-use App\Models\screenLocation;
+use App\Filament\Resources\AssetResource\Pages;
+use App\Filament\Resources\AssetResource\RelationManagers;
+use App\Models\Asset;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,11 +13,11 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class ScreenLocationResource extends Resource
+class AssetResource extends Resource
 {
-    protected static ?string $model = screenLocation::class;
+    protected static ?string $model = Asset::class;
 
-    protected static ?string $navigationGroup = 'Screen';
+    protected static ?string $navigationGroup = 'Event';
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -29,7 +29,7 @@ class ScreenLocationResource extends Resource
                     Forms\Components\TextInput::make('name')
                         ->required()
                         ->columnSpan(1),
-                    Forms\Components\RichEditor::make('remark')
+                    Forms\Components\RichEditor::make('description')
                         ->toolbarButtons([
                             'blockquote',
                             'bold',
@@ -97,9 +97,9 @@ class ScreenLocationResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListScreenLocations::route('/'),
-            'create' => Pages\CreateScreenLocation::route('/create'),
-            'edit' => Pages\EditScreenLocation::route('/{record}/edit'),
+            'index' => Pages\ListAssets::route('/'),
+            'create' => Pages\CreateAsset::route('/create'),
+            'edit' => Pages\EditAsset::route('/{record}/edit'),
         ];
     }
 }
