@@ -24,6 +24,8 @@ class EventInventoryResource extends Resource
 {
     protected static ?string $model = EventInventory::class;
 
+    protected static ?string $navigationGroup = 'Event Management';
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
@@ -118,9 +120,11 @@ class EventInventoryResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('event_id')
-                    ->numeric()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('store.name')
+                    ->numeric(),
+                Tables\Columns\TextColumn::make('event.name')
+                    ->default('-'),
+                Tables\Columns\TextColumn::make('inventoryDetails.asset.name'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -134,7 +138,9 @@ class EventInventoryResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()->iconButton(),
+                Tables\Actions\EditAction::make()->iconButton(),
+                Tables\Actions\DeleteAction::make()->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

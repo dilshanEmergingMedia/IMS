@@ -13,4 +13,14 @@ class EventInventoryDetail extends Model
         'condition',
         'qty',
     ];
+
+    public function eventInventory()
+    {
+        return $this->belongsTo(EventInventory::class);
+    }
+
+    public function asset()
+    {
+        return $this->belongsTo(Asset::class);
+    }
 }

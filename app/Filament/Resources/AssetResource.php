@@ -17,7 +17,7 @@ class AssetResource extends Resource
 {
     protected static ?string $model = Asset::class;
 
-    protected static ?string $navigationGroup = 'Event';
+    protected static ?string $navigationGroup = 'Event Management';
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
