@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\AssetResource\Pages;
+namespace App\Filament\Resources\EventInventoryResource\Pages;
 
-use App\Filament\Resources\AssetResource;
+use App\Filament\Resources\EventInventoryResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditAsset extends EditRecord
+class EditEventInventory extends EditRecord
 {
-    protected static string $resource = AssetResource::class;
+    protected static string $resource = EventInventoryResource::class;
 
     protected function getHeaderActions(): array
     {

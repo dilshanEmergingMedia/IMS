@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\InventoryManageResource\Pages;
 use App\Models\Asset;
 use App\Models\AssetModel;
+use App\Models\Event;
 use App\Models\inventoryManage;
 use App\Models\screenLocation;
 use App\Models\Spare;
@@ -61,7 +62,7 @@ class InventoryManageResource extends Resource
                                 'check_in' => 'heroicon-o-arrow-down-circle',
                                 'check_out' => 'heroicon-o-arrow-up-circle',
                             ])
-                            ->grouped()
+                            ->inline()
                             ->default('check_in')
                             ->formatStateUsing(fn($state) => $state === '1' ? 'check_in' : 'check_out')
                             ->dehydrateStateUsing(fn($state) => $state === 'check_in' ? '1' : '0')
@@ -98,53 +99,30 @@ class InventoryManageResource extends Resource
                                     ->pluck('name', 'id')
                                     ->toArray()
                             )
-                            ->placeholder('screen location')
+                            ->placeholder('Select a screen location')
                             ->searchable()
                             ->prefixIcon('heroicon-o-map')
                             ->visible(fn($get) => $get('screen'))
                             ->columnSpan(2)
                             ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
-                        Select::make('asset_id')
-                            ->label('Asset')
+                        Select::make('event_id')
+                            ->label('Event')
                             ->required(fn($get) => !$get('screen'))
                             ->options(
-                                Asset::where('status', '1')
+                                Event::where('status', '1')
                                     ->pluck('name', 'id')
                                     ->toArray()
                             )
-                            ->placeholder('Select an asset')
+                            ->placeholder('Select an event')
                             ->searchable()
-                            ->prefixIcon('heroicon-o-cube')
+                            ->prefixIcon('heroicon-o-calendar')
                             ->visible(fn($get) => !$get('screen'))
-                            ->reactive()
-                            ->columnSpan(1)
-                            ->afterStateUpdated(function (callable $set) {
-                                $set('asset_models_id', null);
-                            })
-                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
-                        Select::make('asset_models_id')
-                            ->label('Asset Model')
-                            ->required(fn($get) => !$get('screen'))
-                            ->options(function (callable $get) {
-                                $assetId = $get('asset_id');
-                                if (!$assetId) {
-                                    return [];
-                                }
-                                return AssetModel::where('asset_id', $assetId)
-                                    ->where('status', '1')
-                                    ->pluck('name', 'id')
-                                    ->toArray();
-                            })
-                            ->placeholder('Asset model')
-                            ->searchable()
-                            ->prefixIcon('heroicon-o-rectangle-stack')
-                            ->visible(fn($get) => !$get('screen'))
-                            ->reactive()
-                            ->columnSpan(1)
+                            ->columnSpan(2)
                             ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
                     ])
                     ->columns(['default' => 1, 'sm' => 2, 'lg' => 3])
-                    ->extraAttributes(['class' => 'bg-white shadow-sm rounded-lg p-6']),
+                    ->extraAttributes(['class' => 'shadow-sm rounded-lg mt-6'])
+                    ->disabled(fn($get) => is_null($get('screen')) || is_null($get('status'))),
 
                 Repeater::make('inventoryManageDetails')
                     ->relationship('inventoryManageDetails')
@@ -152,7 +130,7 @@ class InventoryManageResource extends Resource
                     ->schema([
                         Select::make('spare_id')
                             ->label('Spare')
-                            ->required()
+                            ->required(fn($get) => $get('../../screen')) // Access parent form's screen state
                             ->options(
                                 Spare::where('status', '1')
                                     ->pluck('name', 'id')
@@ -161,14 +139,15 @@ class InventoryManageResource extends Resource
                             ->placeholder('Select a spare')
                             ->searchable()
                             ->prefixIcon('heroicon-o-wrench-screwdriver')
+                            ->visible(fn($get) => $get('../../screen'))
                             ->reactive()
-                            ->afterStateUpdated(function (callable $set, $state) {
+                            ->afterStateUpdated(function (callable $set) {
                                 $set('model', null);
                             })
                             ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
                         Select::make('model')
                             ->label('Model')
-                            ->required()
+                            ->required(fn($get) => $get('../../screen'))
                             ->options(function (callable $get) {
                                 $spareId = $get('spare_id');
                                 if (!$spareId) {
@@ -181,6 +160,43 @@ class InventoryManageResource extends Resource
                             ->placeholder('Select a model')
                             ->searchable()
                             ->prefixIcon('heroicon-o-identification')
+                            ->visible(fn($get) => $get('../../screen'))
+                            ->reactive()
+                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
+                        Select::make('asset_id')
+                            ->label('Asset')
+                            ->required(fn($get) => !$get('../../screen'))
+                            ->options(
+                                Asset::where('status', '1')
+                                    ->pluck('name', 'id')
+                                    ->toArray()
+                            )
+                            ->placeholder('Select an asset')
+                            ->searchable()
+                            ->prefixIcon('heroicon-o-cube')
+                            ->visible(fn($get) => !$get('../../screen'))
+                            ->reactive()
+                            ->afterStateUpdated(function (callable $set) {
+                                $set('asset_models_id', null);
+                            })
+                            ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
+                        Select::make('asset_models_id')
+                            ->label('Asset Model')
+                            ->required(fn($get) => !$get('../../screen'))
+                            ->options(function (callable $get) {
+                                $assetId = $get('asset_id');
+                                if (!$assetId) {
+                                    return [];
+                                }
+                                return AssetModel::where('asset_id', $assetId)
+                                    ->where('status', '1')
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->placeholder('Select an asset model')
+                            ->searchable()
+                            ->prefixIcon('heroicon-o-rectangle-stack')
+                            ->visible(fn($get) => !$get('../../screen'))
                             ->reactive()
                             ->extraAttributes(['class' => 'bg-gray-50 rounded-lg']),
                         Select::make('condition')
@@ -208,10 +224,11 @@ class InventoryManageResource extends Resource
                     ])
                     ->columns(['default' => 1, 'sm' => 2, 'lg' => 3])
                     ->collapsible()
-                    ->itemLabel(fn(array $state): ?string => ($state['spare_id'] ?? 'New') . ' - ' . ($state['condition'] ?? 'New') . ' (Qty: ' . ($state['quantity'] ?? 0) . ')')
+                    ->itemLabel(fn(array $state): ?string => ($state['spare_id'] ?? $state['asset_id'] ?? 'New') . ' - ' . ($state['condition'] ?? 'New') . ' (Qty: ' . ($state['quantity'] ?? 0) . ')')
                     ->columnSpanFull()
                     ->addActionLabel('Add Another Inventory Detail')
-                    ->extraAttributes(['class' => 'shadow-sm rounded-lg mt-6']),
+                    ->extraAttributes(['class' => 'shadow-sm rounded-lg'])
+                    ->disabled(fn($get) => is_null($get('screen')) || is_null($get('status'))),
 
                 Section::make('Additional Information')
                     ->description('Add any additional details or remarks.')
@@ -226,7 +243,7 @@ class InventoryManageResource extends Resource
                     ->columns(['default' => 1, 'sm' => 2])
                     ->collapsible()
                     ->icon('heroicon-o-information-circle')
-                    ->extraAttributes(['class' => 'bg-white shadow-sm rounded-lg p-6 mt-6'])
+                    ->extraAttributes(['class' => 'shadow-sm rounded-lg p-6 mt-6'])
                     ->disabled(fn($get) => is_null($get('screen')) || is_null($get('status'))),
             ])
             ->extraAttributes(['class' => 'max-w-4xl mx-auto p-6 rounded-xl']);

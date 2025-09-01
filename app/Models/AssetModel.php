@@ -15,4 +15,9 @@ class AssetModel extends Model
         'remark',
         'status',
     ];
+
+    public function asset()
+    {
+        return $this->belongsTo(Asset::class);
+    }
 }
