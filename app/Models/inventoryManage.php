@@ -43,4 +43,12 @@ class inventoryManage extends Model
     {
         return $this->belongsTo(Spare::class);
     }
+    public function event()
+    {
+        return $this->belongsTo(Event::class);
+    }
+    public function asset()
+    {
+        return $this->belongsTo(Asset::class);
+    }
 }

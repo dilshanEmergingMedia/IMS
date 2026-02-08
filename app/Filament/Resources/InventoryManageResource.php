@@ -27,9 +27,8 @@ class InventoryManageResource extends Resource
 {
     protected static ?string $model = inventoryManage::class;
 
-    protected static ?string $navigationGroup = 'Screen';
 
-    protected static ?string $navigationLabel = 'Screen Inventory';
+    protected static ?string $navigationLabel = 'Checkout/Checkin';
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
